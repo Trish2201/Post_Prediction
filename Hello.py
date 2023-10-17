@@ -1,120 +1,113 @@
-
-
-from streamlit.logger import get_logger
 import streamlit as st
 import pandas as pd
+import numpy as np
+import re
 import joblib
-from sklearn.feature_extraction.text import TfidfVectorizer
-import datetime
-import nltk
-nltk.download('stopwords')
-from nltk.corpus import stopwords
-stop = stopwords.words('english')
 
-LOGGER = get_logger(__name__)
+# Custom CSS
+st.markdown("""
+    <style>
+        .reportview-container {
+            background: #D8BFD8;
+        }
+        .main {
+           background: #D8BFD8;
+           color: black;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
-# Load the model and necessary transformers
+# Extracting emojis
+def extract_emojis(text):
+    emoji_pattern = re.compile("["
+                               u"\U0001F600-\U0001F64F"  # emoticons
+                               u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+                               u"\U0001F680-\U0001F6FF"  # transport & map symbols
+                               u"\U0001F700-\U0001F77F"  # alchemical symbols
+                               u"\U0001F780-\U0001F7FF"  # Geometric Shapes Extended
+                               u"\U0001F800-\U0001F8FF"  # Supplemental Arrows-C
+                               u"\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
+                               u"\U0001FA00-\U0001FA6F"  # Chess Symbols
+                               u"\U0001FA70-\U0001FAFF"  # Symbols and Pictographs Extended-A
+                               u"\U00002702-\U000027B0"  # Dingbats
+                               u"\U000024C2-\U0001F251"
+                               "]+", flags=re.UNICODE)
+    
+    return emoji_pattern.findall(text)
+
+# Load models and transformers
 model = joblib.load('model.pkl')
 vectorizer = joblib.load('vectorizer.pkl')
-# label_encoder = joblib.load('label_encoder.pkl')
+encoder = joblib.load('encoder.pkl')
+train_columns = joblib.load('train_columns.pkl')
+benchmark = joblib.load('benchmark.pkl')
 
-def predict_post(data):
-    clean_description = ' '.join([word for word in data['description'].split() if word not in (stop)])
-    description = vectorizer.transform([clean_description])
-    publish_hour = data['publish_hour']
-    publish_day = data['publish_day']
-    post_type = data['post_type']
-    
-    # Create a dataframe from the data
+
+# Streamlit app
+st.title('Instagram Post Reach Predictor')
+
+# Inputs
+post_type = st.selectbox('Post Type', ['IG reel', 'IG carousel' ,'IG image'])
+duration = st.number_input("Duration (sec)", 0)
+time_of_day = st.selectbox('Time of Day', ['4AM', '5AM', '6AM', '7AM', '8AM', '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM', '6PM', '7PM', '8PM', '9PM', '10PM', '11PM'])
+publish_day = st.selectbox('Publish Day', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+#description = st.text_area('Description')
+title = st.text_input('Title')
+# hook = st.text_input('Hook')
+
+# On pressing the predict button
+if st.button('Predict Reach'):
+    # Create a dataframe from inputs
     df = pd.DataFrame({
-        'Duration (sec)': [data['duration']]
-        # 'Publish_hour': [publish_hour],
-        # 'Publish_day': [publish_day]
+        'Post type': [post_type],
+        'Duration (sec)': [duration],
+        'Time of day': [time_of_day],
+        'Publish Day': [publish_day],
+    #    'Description': [description],
+        'Title': [title],
+        # 'Hook': [hook],
+        'Word Count': [len(title.split())]
     })
-    
-    # Add TF-IDF features
-    tfidf_df = pd.DataFrame(description.toarray(), columns=vectorizer.get_feature_names_out())
-    df = pd.concat([df, tfidf_df], axis=1)
-    
-    # Add one-hot encoded features for 'Post type' and 'Publish_day'
-    for pt in [ 'IG carousel', 'IG image', 'IG reel']:  # Replace with actual post types you have
-        df[f'Post type_{pt}'] = 1 if pt == post_type else 0
-    for day in ['Friday', 'Monday', 'Saturday', 'Sunday', 'Thursday', 'Tuesday', 'Wednesday']:
-        df[f'Publish_day_{day}'] = 1 if day == publish_day else 0
-    for i in range(24):
-        df[f'Publish_hour_{str(i)}'] = 1 if i == publish_hour else 0
+
+    # Convert 'Description', 'Title', and 'Hook' using their respective TF-IDF vectorizers
+    # description_matrix = vectorizer.transform(df['Description'])
+    # df_description = pd.DataFrame(description_matrix.toarray(), columns=vectorizer.get_feature_names_out())
+
+    title_matrix = vectorizer.transform(df['Title'])
+    df_title = pd.DataFrame(title_matrix.toarray(), columns=vectorizer.get_feature_names_out())
+
+    # hook_matrix = hook_vectorizer.transform(df['Hook'])
+    # df_hook = pd.DataFrame(hook_matrix.toarray(), columns=hook_vectorizer.get_feature_names_out())
+
+    # Merge the TF-IDF dataframes with the main dataframe
+    df = pd.concat([df, df_title], axis=1) #df_description
+    df = df.drop(columns=[ 'Title'])
+
+    # Prediction
+    print(df.columns.tolist())
+
+    # Ordinal Encode the 'Post type', 'Publish Day', 'Time of day'
+    df = encoder.transform(df)
+
+    # Process Emojis
+    # df['emojis'] = df['Title'].apply(extract_emojis)
+    # df['emojis'] = df['emojis'].apply(lambda x: ''.join(x))
+    # df['emoji_encoded'] = emoji_encoder.transform(df['emojis'])
+    # df = df.drop(columns=['emojis'])
+
+    # Align the dataframe with the training columns
+    missing_cols = set(train_columns) - set(df.columns)
+    print(missing_cols)
+    # for col in missing_cols:
+    #     df[col] = 0
+    df = df[train_columns]
+
     
     prediction = model.predict(df)
-    return prediction
+    st.write(f"Estimated Reach: {int(prediction[0])}")
+    st.write(f"Estimated Reach based on Benchmark: {((int(prediction[0])/int(benchmark))*100):.2f}%")
+    st.write(f"Benchmark: {int(benchmark)}")
 
-st.title("Post Impression Predictor")
-
-
-
-
-
-# Create input widgets
-platforms = ["Instagram", "TikTok", "LinkedIn"]
-platform = st.selectbox("Platform", platforms)  
-
-if(platform == "Instagram"):
-    post_types = ["IG image", "IG reel", "IG carousel"]
-else:
-    post_types = ["Image", "Reel", "Carousel"]
-post_type = st.selectbox("Post Type", post_types) 
-description = st.text_area("Description", "Enter post description here...")
-duration = st.number_input("Duration (sec)", 0)
-publish_date = st.date_input("Publish Date", datetime.date.today()) 
-publish_time = st.time_input("Publish Time", datetime.time(8, 45))  
- 
-# account_username = st.text_input("Account Username", "user1")
-
-
-# Predict button
-if st.button("Predict"):
-    data = {
-        'description': description,
-        'duration': duration,
-        'publish_hour': publish_time.hour,
-        'publish_day': publish_date.strftime('%A'),
-        'post_type': post_type
-    }
-    prediction = predict_post(data)
-    st.write(f"Impressions: {prediction[0]}")
-
-
-
-
-def run():
-    pass
-    # st.set_page_config(
-    #     page_title="Post predictor ",
-    #     page_icon="👋",
-    # )
-
-    # st.write("# Welcome to Streamlit! 👋")
-
-    # st.sidebar.success("Select a demo above.")
-
-    # st.markdown(
-    #     """
-    #     Streamlit is an open-source app framework built specifically for
-    #     Machine Learning and Data Science projects.
-    #     **👈 Select a demo from the sidebar** to see some examples
-    #     of what Streamlit can do!
-    #     ### Want to learn more?
-    #     - Check out [streamlit.io](https://streamlit.io)
-    #     - Jump into our [documentation](https://docs.streamlit.io)
-    #     - Ask a question in our [community
-    #       forums](https://discuss.streamlit.io)
-    #     ### See more complex demos
-    #     - Use a neural net to [analyze the Udacity Self-driving Car Image
-    #       Dataset](https://github.com/streamlit/demo-self-driving)
-    #     - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    # """
-    # )
-
-
-
-if __name__ == "__main__":
-    run()
+# Footer
+st.write('---')
+st.write('Developed with ❤️ by TeamGary')
