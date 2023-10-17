@@ -1,6 +1,6 @@
 altair
 numpy
-pandas
+pandas==1.5.3
 pydeck
 streamlit
 joblib
