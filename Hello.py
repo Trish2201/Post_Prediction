@@ -5,6 +5,7 @@ import re
 import joblib
 
 # Custom CSS
+# Custom CSS
 st.markdown("""
     <style>
         .reportview-container {
@@ -16,6 +17,8 @@ st.markdown("""
         }
     </style>
     """, unsafe_allow_html=True)
+
+
 
 # Extracting emojis
 def extract_emojis(text):
@@ -35,6 +38,12 @@ def extract_emojis(text):
     
     return emoji_pattern.findall(text)
 
+# Function to convert HEX to RGB
+def hex_to_rgb(value):
+    value = value.lstrip('#')
+    length = len(value)
+    return tuple(int(value[i:i+length//3], 16) for i in range(0, length, length//3))
+
 # Load models and transformers
 model = joblib.load('model.pkl')
 vectorizer = joblib.load('vectorizer.pkl')
@@ -44,7 +53,7 @@ benchmark = joblib.load('benchmark.pkl')
 
 
 # Streamlit app
-st.title('Instagram Post Reach Predictor')
+st.title('Instagram Post Reach Predictor 🚀 ')
 
 # Inputs
 post_type = st.selectbox('Post Type', ['IG reel', 'IG carousel' ,'IG image'])
@@ -54,6 +63,21 @@ publish_day = st.selectbox('Publish Day', ['Monday', 'Tuesday', 'Wednesday', 'Th
 #description = st.text_area('Description')
 title = st.text_input('Title')
 # hook = st.text_input('Hook')
+
+# Add color pickers
+title_text_color_hex = st.color_picker('Title Text Color', '#000000') # Default color is black
+title_background_color_hex = st.color_picker('Title Background Color', '#FFFFFF') # Default color is white
+
+title_text_color_rgb = hex_to_rgb(title_text_color_hex)
+title_background_color_rgb = hex_to_rgb(title_background_color_hex)
+
+# New input widgets for the two questions
+contains_number = st.selectbox('Contains Number in Title?', ['Yes', 'No'])
+multiple_fonts = st.selectbox('Multiple Font Colors Detected in Title?', ['Yes', 'No'])
+
+# Convert the user's answers to 1 or 0
+contains_number = 1 if contains_number == 'Yes' else 0
+multiple_fonts = 1 if multiple_fonts == 'Yes' else 0
 
 # On pressing the predict button
 if st.button('Predict Reach'):
@@ -66,7 +90,15 @@ if st.button('Predict Reach'):
     #    'Description': [description],
         'Title': [title],
         # 'Hook': [hook],
-        'Word Count': [len(title.split())]
+        'Word Count': [len(title.split())],
+        'Title Text Color - R': [title_text_color_rgb[0]],
+        'Title Text Color - G': [title_text_color_rgb[1]],
+        'Title Text Color - B': [title_text_color_rgb[2]],
+        'Title Background Color - R': [title_background_color_rgb[0]],
+        'Title Background Color - G': [title_background_color_rgb[1]],
+        'Title Background Color - B': [title_background_color_rgb[2]],
+        'Contains Number in Title?': [contains_number],
+        'Multiple Font Colors Detected in Title?': [multiple_fonts],
     })
 
     # Convert 'Description', 'Title', and 'Hook' using their respective TF-IDF vectorizers
@@ -84,7 +116,10 @@ if st.button('Predict Reach'):
     df = df.drop(columns=[ 'Title'])
 
     # Prediction
-    print(df.columns.tolist())
+    file1 = open('myfile2.txt', 'w')
+    # print(len(df.columns.tolist()))
+    file1.write(str(df.columns.tolist()))
+    file1.close()
 
     # Ordinal Encode the 'Post type', 'Publish Day', 'Time of day'
     df = encoder.transform(df)
