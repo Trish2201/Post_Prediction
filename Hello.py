@@ -62,7 +62,7 @@ time_of_day = st.selectbox('Time of Day', ['4AM', '5AM', '6AM', '7AM', '8AM', '9
 publish_day = st.selectbox('Publish Day', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
 #description = st.text_area('Description')
 title = st.text_input('Title')
-# hook = st.text_input('Hook')
+transcription = st.text_input('Hook')
 
 # Add color pickers
 title_text_color_hex = st.color_picker('Title Text Color', '#000000') # Default color is black
@@ -87,9 +87,9 @@ if st.button('Predict Reach'):
         'Duration (sec)': [duration],
         'Time of day': [time_of_day],
         'Publish Day': [publish_day],
-    #    'Description': [description],
-        'Title': [title],
-        # 'Hook': [hook],
+        #'Description': [description],
+        'Title': [title + " " + transcription],
+        # 'Transcription': [transcription],
         'Word Count': [len(title.split())],
         'Title Text Color - R': [title_text_color_rgb[0]],
         'Title Text Color - G': [title_text_color_rgb[1]],
