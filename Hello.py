@@ -145,7 +145,7 @@ if st.button('Predict Reach'):
     st.write(f"Benchmark: {int(benchmark)}")
 
     # Streamlit webpage layout
-    st.title('Recommended words based on best reach')
+    st.title('Recommended words')
 
     # Load and display the word cloud for 'Title'
     title_wordcloud_image = Image.open('title_wordcloud.png')
