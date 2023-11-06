@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import re
 import joblib
+from PIL import Image
 
 # Custom CSS
 # Custom CSS
@@ -142,6 +143,17 @@ if st.button('Predict Reach'):
     st.write(f"Estimated Reach: {int(prediction[0])}")
     st.write(f"Estimated Reach based on Benchmark: {((int(prediction[0])/int(benchmark))*100):.2f}%")
     st.write(f"Benchmark: {int(benchmark)}")
+
+    # Streamlit webpage layout
+    st.title('Recommended words based on best reach')
+
+    # Load and display the word cloud for 'Title'
+    title_wordcloud_image = Image.open('title_wordcloud.png')
+    st.image(title_wordcloud_image, caption='Word Cloud for Titles', use_column_width='always')
+
+    # Load and display the word cloud for 'Transcription'
+    transcription_wordcloud_image = Image.open('transcription_wordcloud.png')
+    st.image(transcription_wordcloud_image, caption='Word Cloud for Hooks', use_column_width='always')
 
 # Footer
 st.write('---')
