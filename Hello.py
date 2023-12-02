@@ -54,7 +54,7 @@ benchmark = joblib.load('benchmark.pkl')
 
 
 # Streamlit app
-st.title('Instagram Post Reach Predictor 🚀 ')
+st.title('Instagram Post Comments Predictor 🚀 ')
 
 # Inputs
 post_type = st.selectbox('Post Type', ['IG reel', 'IG carousel' ,'IG image'])
@@ -81,7 +81,7 @@ contains_number = 1 if contains_number == 'Yes' else 0
 multiple_fonts = 1 if multiple_fonts == 'Yes' else 0
 
 # On pressing the predict button
-if st.button('Predict Reach'):
+if st.button('Predict Comments'):
     # Create a dataframe from inputs
     df = pd.DataFrame({
         'Post type': [post_type],
@@ -140,8 +140,8 @@ if st.button('Predict Reach'):
 
     
     prediction = model.predict(df)
-    st.write(f"Estimated Reach: {int(prediction[0])}")
-    st.write(f"Estimated Reach based on Benchmark: {((int(prediction[0])/int(benchmark))*100):.2f}%")
+    st.write(f"Estimated Comments: {int(prediction[0])}")
+    st.write(f"Estimated Comments based on Benchmark: {((int(prediction[0])/int(benchmark))*100):.2f}%")
     st.write(f"Benchmark: {int(benchmark)}")
 
     # Streamlit webpage layout
