@@ -12,6 +12,7 @@ from io import BytesIO
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import gc
 
 # Custom CSS
 st.markdown(
@@ -28,6 +29,16 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# Define a function to clear memory
+def clear_memory():
+    # Clear specific variables
+    if 'large_variable' in globals():
+        del globals()['large_variable']
+    
+    # Garbage collection to free up memory
+    gc.collect()
+
 
 
 # Function to extract emojis
@@ -281,6 +292,9 @@ if st.button("Predict Reach"):
         f"Final Estimated Reach based on Benchmark: {((final_estimated_reach / int(benchmark)) * 100):.2f}%"
     )
     st.write(f"Benchmark: {int(benchmark)}")
+
+    # Once prediction is done, call clear_memory to free up space
+    clear_memory()
 
 # Footer
 st.write("---")
