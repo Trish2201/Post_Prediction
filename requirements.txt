@@ -7,3 +7,4 @@ joblib
 scikit-learn==1.2.1
 nltk
 category_encoders
+tensorflow
