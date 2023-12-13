@@ -177,7 +177,7 @@ contains_number = 1 if contains_number == "Yes" else 0
 multiple_fonts = 1 if multiple_fonts == "Yes" else 0
 
 # Image upload
-uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+uploaded_image = st.file_uploader("Upload thumbnail", type=["jpg", "jpeg", "png"])
 
 # New inputs for Relevancy Score and Multiple
 relevancy_score = st.number_input("Relevancy Score", min_value=0.0, value = 100.0, format="%.2f")
@@ -274,12 +274,6 @@ if st.button("Predict Reach"):
 
     # Adjust the final estimated reach based on Relevancy Score and Multiple
     final_estimated_reach = estimated_reach * relevancy_score * multiple
-
-    # st.write(f"Estimated Reach: {estimated_reach}")
-    # st.write(
-    #     f"Estimated Reach based on Benchmark: {((estimated_reach / int(benchmark)) * 100):.2f}%"
-    # )
-    # st.write(f"Benchmark: {int(benchmark)}")
  
     # # Display the final prediction
     st.write(f"Final Estimated Reach: {final_estimated_reach}")
