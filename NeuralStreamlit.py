@@ -6,12 +6,12 @@ import tensorflow as tf
 import joblib
 from PIL import Image
 import random
-from PIL import Image
+import io
 import requests
 from io import BytesIO
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.applications import ResNet50
-from tensorflow.keras.applications.resnet50 import preprocess_input
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 # Custom CSS
 st.markdown(
@@ -59,17 +59,54 @@ def hex_to_rgb(value):
         int(value[i : i + length // 3], 16) for i in range(0, length, length // 3)
     )
 
-# Function to preprocess images and extract features
-def preprocess_image(image, target_size=(224, 224)):
-    image = image.resize(target_size)
-    img_array = img_to_array(image)
-    img_array = preprocess_input(img_array)
-    return img_array
 
-def extract_features_from_image(image):
-    feature_extractor = ResNet50(weights='imagenet', include_top=False)
-    features = feature_extractor.predict(np.expand_dims(image, axis=0))
-    return features.flatten()
+def download_and_preprocess_image(image_content, target_size=(224, 224)):
+    if image_content:
+        try:
+            # Convert the binary content to a bytes stream
+            image_stream = io.BytesIO(image_content)
+            image = Image.open(image_stream)
+            image = image.resize(target_size)
+            img_array = img_to_array(image)
+            img_array = img_array / 255.0  # Scale pixel values
+            return img_array
+        except IOError as e:
+            print(f"Error processing the image: {e}")
+            return None
+    else:
+        return None
+
+def preprocess_and_extract_features(processed_image, datagen, feature_extractor):
+    if processed_image is not None:
+        augmented_images = [datagen.random_transform(processed_image) for _ in range(5)]
+        augmented_features = [feature_extractor.predict(np.expand_dims(img, axis=0)) for img in augmented_images]
+        
+        # Calculate the mean of the features
+        mean_features = np.mean(augmented_features, axis=0)
+        
+        # Flatten the features and reshape to match the model's expected input shape
+        flattened_features = mean_features.flatten()
+        if flattened_features.size >= 500:  # Ensure there are enough elements
+            flattened_features = flattened_features[:500]  # Truncate or reshape as needed
+        else:
+            # If not enough features, pad with zeros
+            flattened_features = np.pad(flattened_features, (0, 500 - flattened_features.size), 'constant')
+        
+        return flattened_features
+    else:
+        # Return an array of zeros with the shape (500,) if no image is processed
+        return np.zeros((500,))
+
+
+
+# Initialize the feature extractor (example with VGG16)
+feature_extractor = ResNet50(weights='imagenet', include_top=False)
+datagen = ImageDataGenerator(
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    horizontal_flip=True
+    )
 
 
 
@@ -195,21 +232,39 @@ if st.button("Predict Reach"):
     df = df.reindex(columns=prediction_columns, fill_value=0)
     tabular_data = df.values.reshape(1, -1)
 
-    # train_columns.remove("Reach")
-    # df = df[train_columns]
+    # initializing image_features
+    image_features = None
+    placeholder_image_features = np.zeros((1, 500))
 
-    # Process the uploaded image
+    # Process the uploaded image and extract features
     if uploaded_image is not None:
-        image = Image.open(uploaded_image)
-        processed_image = preprocess_image(image)
-        image_features = extract_features_from_image(processed_image)
-        image_features = image_features.reshape(1, -1)  # Reshape for compatibility with model input
+        with st.spinner('Processing image...'):
+            processed_image = download_and_preprocess_image(uploaded_image.getvalue())
+            if processed_image is not None:
+                image_features = preprocess_and_extract_features(processed_image, datagen, feature_extractor)
+                st.success('Image processed successfully.')
+                # Reshape image_features to match the model's expected input shape
+                if len(image_features.shape) == 1:
+                    image_features = np.expand_dims(image_features, axis=0)
+            else:
+                st.error('Error in processing the image.')
+                image_features = placeholder_image_features
     else:
-        # If no image is uploaded, use a zero array as a placeholder
-        image_features = np.zeros((1, 500))  # Assuming 500 features from image
+        # Use the placeholder as the image features when no image is uploaded
+        image_features = placeholder_image_features
 
-    # Combine image features with tabular data for prediction
-    prediction_inputs = [image_features, tabular_data]
+
+    # Check if image_features is defined, then prepare prediction inputs accordingly
+    if image_features is not None:
+        # Reshape image_features to have the same first dimension as tabular_data
+        if len(image_features.shape) == 1:  # If image_features is 1D
+            image_features = np.expand_dims(image_features, axis=0)
+        # Combine image features with tabular data for prediction
+        prediction_inputs = [image_features, tabular_data]
+    else:
+        # Use only tabular_data for prediction
+        prediction_inputs = [tabular_data]
+
 
     # Prediction
     prediction = model.predict(prediction_inputs)
