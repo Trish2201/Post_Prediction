@@ -30,11 +30,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Define a function to clear memory
 def clear_memory():
-    # Clear specific variables
-    if 'large_variable' in globals():
-        del globals()['large_variable']
+    # List of large variables to clear
+    large_variables = ['df', 'augmented_images', 'image_features', 'placeholder_image_features', 'processed_image']
+
+    for var in large_variables:
+        if var in globals():
+            del globals()[var]
     
     # Garbage collection to free up memory
     gc.collect()
@@ -188,11 +190,11 @@ contains_number = 1 if contains_number == "Yes" else 0
 multiple_fonts = 1 if multiple_fonts == "Yes" else 0
 
 # Image upload
-uploaded_image = st.file_uploader("Upload thumbnail", type=["jpg", "jpeg", "png"])
+uploaded_image = st.file_uploader("Upload thumbnail", type=["jpg", "jpeg"])
 
 # New inputs for Relevancy Score and Multiple
-relevancy_score = st.number_input("Relevancy Score", min_value=0.0, value = 100.0, format="%.2f")
-multiple = st.number_input("Multiple", min_value=0.0, value = 0.01, format="%.2f") # default value entering
+relevancy_score = st.number_input("Relevancy Score", min_value=0.0, value = 100.0, format="%.2f") # default value entering = 100
+multiple = st.number_input("Multiple", min_value=0.0, value = 0.01, format="%.2f") # default value entering = 0.01
 
 
 # Predict Reach
@@ -239,13 +241,13 @@ if st.button("Predict Reach"):
     df = pd.concat([df.drop(columns=categorical_cols), df_encoded], axis=1)
 
     # Ensure df has the same columns as during model training, minus 'Reach'
-    prediction_columns = [col for col in train_columns if col != 'Reach']
+    prediction_columns = [col for col in train_columns if col != 'Reach'] # removing 'Reach' from train_columns to limit it to input features
     df = df.reindex(columns=prediction_columns, fill_value=0)
     tabular_data = df.values.reshape(1, -1)
 
     # initializing image_features
     image_features = None
-    placeholder_image_features = np.zeros((1, 500))
+    placeholder_image_features = np.zeros((1, 500)) # case
 
     # Process the uploaded image and extract features
     if uploaded_image is not None:
