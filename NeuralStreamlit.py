@@ -43,34 +43,34 @@ def clear_memory():
 
 
 
-# Function to extract emojis
-def extract_emojis(text):
-    emoji_pattern = re.compile(
-        "["
-        "\U0001F600-\U0001F64F"  # emoticons
-        "\U0001F300-\U0001F5FF"  # symbols & pictographs
-        "\U0001F680-\U0001F6FF"  # transport & map symbols
-        "\U0001F700-\U0001F77F"  # alchemical symbols
-        "\U0001F780-\U0001F7FF"  # Geometric Shapes Extended
-        "\U0001F800-\U0001F8FF"  # Supplemental Arrows-C
-        "\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
-        "\U0001FA00-\U0001FA6F"  # Chess Symbols
-        "\U0001FA70-\U0001FAFF"  # Symbols and Pictographs Extended-A
-        "\U00002702-\U000027B0"  # Dingbats
-        "\U000024C2-\U0001F251"
-        "]+",
-        flags=re.UNICODE,
-    )
-    return emoji_pattern.findall(text)
+# # Function to extract emojis
+# def extract_emojis(text):
+#     emoji_pattern = re.compile(
+#         "["
+#         "\U0001F600-\U0001F64F"  # emoticons
+#         "\U0001F300-\U0001F5FF"  # symbols & pictographs
+#         "\U0001F680-\U0001F6FF"  # transport & map symbols
+#         "\U0001F700-\U0001F77F"  # alchemical symbols
+#         "\U0001F780-\U0001F7FF"  # Geometric Shapes Extended
+#         "\U0001F800-\U0001F8FF"  # Supplemental Arrows-C
+#         "\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
+#         "\U0001FA00-\U0001FA6F"  # Chess Symbols
+#         "\U0001FA70-\U0001FAFF"  # Symbols and Pictographs Extended-A
+#         "\U00002702-\U000027B0"  # Dingbats
+#         "\U000024C2-\U0001F251"
+#         "]+",
+#         flags=re.UNICODE,
+#     )
+#     return emoji_pattern.findall(text)
 
 
-# Function to convert HEX to RGB
-def hex_to_rgb(value):
-    value = value.lstrip("#")
-    length = len(value)
-    return tuple(
-        int(value[i : i + length // 3], 16) for i in range(0, length, length // 3)
-    )
+# # Function to convert HEX to RGB
+# def hex_to_rgb(value):
+#     value = value.lstrip("#")
+#     length = len(value)
+#     return tuple(
+#         int(value[i : i + length // 3], 16) for i in range(0, length, length // 3)
+#     )
 
 
 def download_and_preprocess_image(image_content, target_size=(224, 224)):
@@ -140,26 +140,30 @@ duration = st.number_input("Duration (sec)", 0)
 time_of_day = st.selectbox(
     "Time of Day",
     [
-        "4AM",
-        "5AM",
-        "6AM",
-        "7AM",
-        "8AM",
-        "9AM",
-        "10AM",
-        "11AM",
-        "12PM",
-        "1PM",
-        "2PM",
-        "3PM",
-        "4PM",
-        "5PM",
-        "6PM",
-        "7PM",
-        "8PM",
-        "9PM",
-        "10PM",
-        "11PM",
+        # "4AM",
+        # "5AM",
+        # "6AM",
+        # "7AM",
+        # "8AM",
+        # "9AM",
+        # "10AM",
+        # "11AM",
+        # "12PM",
+        # "1PM",
+        # "2PM",
+        # "3PM",
+        # "4PM",
+        # "5PM",
+        # "6PM",
+        # "7PM",
+        # "8PM",
+        # "9PM",
+        # "10PM",
+        # "11PM",
+        "4AM - 8AM",
+        "9AM - 1PM",
+        "2PM - 6PM",
+        "7PM - 11PM",
     ],
 )
 publish_day = st.selectbox(
@@ -169,32 +173,33 @@ publish_day = st.selectbox(
 title = st.text_input("Title")
 transcription = st.text_input("Hook")
 
-# Add color pickers
-title_text_color_hex = st.color_picker(
-    "Title Text Color", "#000000"
-)  # Default color is black
-title_background_color_hex = st.color_picker(
-    "Title Background Color", "#FFFFFF"
-)  # Default color is white
+# # Add color pickers
+# title_text_color_hex = st.color_picker(
+#     "Title Text Color", "#000000"
+# )  # Default color is black
+# title_background_color_hex = st.color_picker(
+#     "Title Background Color", "#FFFFFF"
+# )  # Default color is white
 
-# Convert HEX colors to RGB
-title_text_color_rgb = hex_to_rgb(title_text_color_hex)
-title_background_color_rgb = hex_to_rgb(title_background_color_hex)
+# # Convert HEX colors to RGB
+# title_text_color_rgb = hex_to_rgb(title_text_color_hex)
+# title_background_color_rgb = hex_to_rgb(title_background_color_hex)
 
 # New input widgets for the two questions
 contains_number = st.selectbox("Contains Number in Title?", ["Yes", "No"], index=1)
-multiple_fonts = st.selectbox("Multiple Font Colors Detected in Title?", ["Yes", "No"], index=1)
+#multiple_fonts = st.selectbox("Multiple Font Colors Detected in Title?", ["Yes", "No"], index=1)
 
 # Convert the user's answers to 1 or 0
 contains_number = 1 if contains_number == "Yes" else 0
-multiple_fonts = 1 if multiple_fonts == "Yes" else 0
+#multiple_fonts = 1 if multiple_fonts == "Yes" else 0
 
 # Image upload
 uploaded_image = st.file_uploader("Upload thumbnail", type=["jpg", "jpeg"])
 
 # New inputs for Relevancy Score and Multiple
-relevancy_score = st.number_input("Relevancy Score", min_value=0.0, value = 100.0, format="%.2f") # default value entering = 100
-multiple = st.number_input("Multiple", min_value=0.0, value = 0.01, format="%.2f") # default value entering = 0.01
+relevancy_score = st.number_input("Choose the cultural relevance score between 0 to 1", min_value=0.0, value = 0.5, format="%.2f") # default value entering = 100
+#multiple = st.number_input("Multiple", min_value=0.0, value = 0.01, format="%.2f") # default value entering = 0.10
+multiple = 1
 
 
 # Predict Reach
@@ -207,20 +212,23 @@ if st.button("Predict Reach"):
             "Time of day": [time_of_day],
             "Publish Day": [publish_day],
             "Title": [title + " " + transcription],
-            "Word Count": [len(title.split())],
-            "Title Text Color_R": [title_text_color_rgb[0]],
-            "Title Text Color_G": [title_text_color_rgb[1]],
-            "Title Text Color_B": [title_text_color_rgb[2]],
-            "Title Background Color_R": [title_background_color_rgb[0]],
-            "Title Background Color_G": [title_background_color_rgb[1]],
-            "Title Background Color_B": [title_background_color_rgb[2]],
+            #"Word Count": [len(title.split())],
+            # "Title Text Color_R": [title_text_color_rgb[0]],
+            # "Title Text Color_G": [title_text_color_rgb[1]],
+            # "Title Text Color_B": [title_text_color_rgb[2]],
+            # "Title Background Color_R": [title_background_color_rgb[0]],
+            # "Title Background Color_G": [title_background_color_rgb[1]],
+            # "Title Background Color_B": [title_background_color_rgb[2]],
             "Contains Number in Title?": [contains_number],
-            "Multiple Font Colors Detected in Title?": [multiple_fonts],
+           #"Multiple Font Colors Detected in Title?": [multiple_fonts],
         }
     )
 
     # Scale numeric features
-    numeric_cols = ["Duration (sec)", "Word Count", "Contains Number in Title?", "Multiple Font Colors Detected in Title?"]
+    numeric_cols = ["Duration (sec)",
+        "Contains Number in Title?",
+       ]
+    
     df[numeric_cols] = scaler.transform(df[numeric_cols])
 
     # Convert 'Title' using TF-IDF vectorizer
@@ -278,6 +286,8 @@ if st.button("Predict Reach"):
         # Use only tabular_data for prediction
         prediction_inputs = [tabular_data]
 
+    print("Image: ",type(image_features),type(image_features[0]),type(image_features[0][0]))
+    print("Tabular: ",type(tabular_data),type(tabular_data[0]),type(tabular_data[0][0]))
 
     # Prediction
     prediction = model.predict(prediction_inputs)
@@ -286,7 +296,7 @@ if st.button("Predict Reach"):
     estimated_reach = int(prediction[0])
 
     # Adjust the final estimated reach based on Relevancy Score and Multiple
-    final_estimated_reach = estimated_reach * relevancy_score * multiple
+    final_estimated_reach = estimated_reach*relevancy_score*multiple*10
  
     # # Display the final prediction
     st.write(f"Final Estimated Reach: {final_estimated_reach}")
