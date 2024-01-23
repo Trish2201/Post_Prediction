@@ -351,7 +351,7 @@ from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import gc
-import cv2
+import opencv-python
 from deepface import DeepFace
 
 # Custom CSS
