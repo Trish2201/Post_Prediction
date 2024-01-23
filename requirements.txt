@@ -2,9 +2,10 @@ altair
 numpy
 pandas==1.5.3
 pydeck
-streamlit
+streamlit==1.8.0
 joblib
 scikit-learn==1.2.1
 nltk
 category_encoders
 tensorflow
+deepface==0.0.68
