@@ -1,4 +1,4 @@
-opencv-python
+opencv-python-headless
 altair
 numpy
 pandas==1.5.3
@@ -10,3 +10,4 @@ nltk
 category_encoders
 tensorflow
 deepface==0.0.68
+
