@@ -9,3 +9,4 @@ nltk
 category_encoders
 tensorflow
 deepface==0.0.68
+opencv-python-headless
