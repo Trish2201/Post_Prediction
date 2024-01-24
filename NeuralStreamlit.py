@@ -355,6 +355,7 @@ import cv2
 from deepface import DeepFace
 from scipy.special import inv_boxcox
 
+
 # Custom CSS
 st.markdown(
     """
@@ -411,13 +412,13 @@ def preprocess_and_extract_features(processed_image, emotion_features, object_fe
         combined_features = np.concatenate((mean_features, emotion_features, object_features))
         
         # Resize the feature vector to a fixed size if necessary
-        target_size = 100  # Adjust as needed
+        target_size = 500  # Adjust as needed
         if combined_features.size >= target_size:
             return combined_features[:target_size]
         else:
             return np.pad(combined_features, (0, target_size - combined_features.size), 'constant')
     else:
-        return np.zeros((100,))
+        return np.zeros((500,))
 
 
 def extract_emotion_features(image):
@@ -455,7 +456,13 @@ benchmark = joblib.load("benchmark.pkl")
 train_columns = joblib.load("train_columns.pkl")
 
 # Load the lambda value for Box-Cox transformation
-boxcox_lambda = joblib.load("boxcox_lambda.pkl")
+import os
+
+if os.path.exists("boxcox_lambda.pkl"):
+    boxcox_lambda = joblib.load("boxcox_lambda.pkl")
+else:
+    st.error("File boxcox_lambda.pkl not found.")
+
 
 
 # Streamlit app
@@ -547,7 +554,7 @@ if st.button("Predict Reach"):
 
     # initializing image_features
     image_features = None
-    placeholder_image_features = np.zeros((1, 100)) # case
+    placeholder_image_features = np.zeros((1, 500)) # case
 
     if uploaded_image is not None:
         with st.spinner('Processing image...'):
@@ -557,9 +564,9 @@ if st.button("Predict Reach"):
                 st.success('Image processed successfully.')
             else:
                 st.error('Error in processing the image.')
-                image_features = np.zeros((100,))
+                image_features = np.zeros((500,))
     else:
-        image_features = np.zeros((100,))
+        image_features = np.zeros((500,))
 
 
     # Check if image_features is defined, then prepare prediction inputs accordingly
