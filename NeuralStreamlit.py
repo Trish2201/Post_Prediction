@@ -456,12 +456,7 @@ benchmark = joblib.load("benchmark.pkl")
 train_columns = joblib.load("train_columns.pkl")
 
 # Load the lambda value for Box-Cox transformation
-import os
-
-if os.path.exists("boxcox_lambda.pkl"):
-    boxcox_lambda = joblib.load("boxcox_lambda.pkl")
-else:
-    st.error("File boxcox_lambda.pkl not found.")
+boxcox_lambda = joblib.load("boxcox_lambda.pkl")
 
 
 
