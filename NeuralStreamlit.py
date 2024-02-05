@@ -40,7 +40,7 @@ st.markdown(
 
 def clear_memory():
     # List of large variables to clear
-    large_variables = ['df', 'augmented_images', 'image_features', 'placeholder_image_features', 'processed_image']
+    large_variables = ['df', 'bert_embeddings', 'object_features', 'emotion_features', 'processed_image']
 
     for var in large_variables:
         if var in globals():
