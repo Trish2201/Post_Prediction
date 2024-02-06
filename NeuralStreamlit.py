@@ -149,7 +149,7 @@ def load_resources():
     boxcox_lambda = joblib.load("boxcox_lambda.pkl")
     return bert_model, feature_extractor, model, tokenizer, scaler, encoder, text_vectorizer, benchmark, train_columns, boxcox_lambda
 
-bert_model, feature_extractor, neural_network_model, tokenizer, scaler, encoder, text_vectorizer, benchmark, train_columns, boxcox_lambda = load_resources()
+bert_model, feature_extractor, model, tokenizer, scaler, encoder, text_vectorizer, benchmark, train_columns, boxcox_lambda = load_resources()
 # model = tf.keras.models.load_model("neural_network_model.h5")
 # scaler = joblib.load("scaler.pkl")
 # encoder = joblib.load("encoder1.pkl")
