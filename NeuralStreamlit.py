@@ -142,7 +142,7 @@ def load_resources():
     model = tf.keras.models.load_model("neural_network_model.h5")
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     scaler = joblib.load("scaler.pkl")
-    encoder = joblib.load("encoder.pkl")  # Adjust the name if necessary
+    encoder = joblib.load("encoder1.pkl")  # Adjust the name if necessary
     text_vectorizer = joblib.load("tfidf_vectorizer.pkl")
     benchmark = joblib.load("benchmark.pkl")
     train_columns = joblib.load("train_columns.pkl")
