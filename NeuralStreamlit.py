@@ -51,8 +51,8 @@ def clear_memory():
 
 
 # Initialize BERT tokenizer and model
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-bert_model = TFBertModel.from_pretrained('bert-base-uncased')
+# tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+# bert_model = TFBertModel.from_pretrained('bert-base-uncased')
 
 def get_bert_embeddings(text):
     # Check if the text is empty or null
@@ -135,13 +135,28 @@ datagen = ImageDataGenerator(
 
 
 # Load models and transformers
-model = tf.keras.models.load_model("neural_network_model.h5")
-scaler = joblib.load("scaler.pkl")
-encoder = joblib.load("encoder1.pkl")
-text_vectorizer = joblib.load("tfidf_vectorizer.pkl")
-benchmark = joblib.load("benchmark.pkl")
-train_columns = joblib.load("train_columns.pkl")
-boxcox_lambda = joblib.load("boxcox_lambda.pkl")
+@st.cache(allow_output_mutation=True)
+def load_resources():
+    bert_model = TFBertModel.from_pretrained('bert-base-uncased')
+    feature_extractor = ResNet50(weights='imagenet', include_top=False)
+    model = tf.keras.models.load_model("neural_network_model.h5")
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    scaler = joblib.load("scaler.pkl")
+    encoder = joblib.load("encoder.pkl")  # Adjust the name if necessary
+    text_vectorizer = joblib.load("tfidf_vectorizer.pkl")
+    benchmark = joblib.load("benchmark.pkl")
+    train_columns = joblib.load("train_columns.pkl")
+    boxcox_lambda = joblib.load("boxcox_lambda.pkl")
+    return bert_model, feature_extractor, model, tokenizer, scaler, encoder, text_vectorizer, benchmark, train_columns, boxcox_lambda
+
+bert_model, feature_extractor, neural_network_model, tokenizer, scaler, encoder, text_vectorizer, benchmark, train_columns, boxcox_lambda = load_resources()
+# model = tf.keras.models.load_model("neural_network_model.h5")
+# scaler = joblib.load("scaler.pkl")
+# encoder = joblib.load("encoder1.pkl")
+# text_vectorizer = joblib.load("tfidf_vectorizer.pkl")
+# benchmark = joblib.load("benchmark.pkl")
+# train_columns = joblib.load("train_columns.pkl")
+# boxcox_lambda = joblib.load("boxcox_lambda.pkl")
 
 # Streamlit app
 st.title("Instagram Post Reach Predictor ")
