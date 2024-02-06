@@ -19,6 +19,7 @@ from deepface import DeepFace
 from scipy.special import inv_boxcox
 from transformers import BertTokenizer, TFBertModel
 from textblob import TextBlob
+from sklearn.preprocessing import StandardScaler
 
 
 
@@ -135,7 +136,7 @@ datagen = ImageDataGenerator(
 
 
 # Load models and transformers
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def load_resources():
     bert_model = TFBertModel.from_pretrained('bert-base-uncased')
     feature_extractor = ResNet50(weights='imagenet', include_top=False)
@@ -150,13 +151,6 @@ def load_resources():
     return bert_model, feature_extractor, model, tokenizer, scaler, encoder, text_vectorizer, benchmark, train_columns, boxcox_lambda
 
 bert_model, feature_extractor, model, tokenizer, scaler, encoder, text_vectorizer, benchmark, train_columns, boxcox_lambda = load_resources()
-# model = tf.keras.models.load_model("neural_network_model.h5")
-# scaler = joblib.load("scaler.pkl")
-# encoder = joblib.load("encoder1.pkl")
-# text_vectorizer = joblib.load("tfidf_vectorizer.pkl")
-# benchmark = joblib.load("benchmark.pkl")
-# train_columns = joblib.load("train_columns.pkl")
-# boxcox_lambda = joblib.load("boxcox_lambda.pkl")
 
 # Streamlit app
 st.title("Instagram Post Reach Predictor ")
@@ -268,10 +262,34 @@ if st.button("Predict Reach"):
     #bert_embeddings_normalized = bert_embeddings_normalized.reshape(1, -1)
 
 
-    # Scale numeric features
-    numeric_cols = ["Duration (sec)", "Sentiment_Polarity", "Sentiment_Subjectivity"]
-    
-    df[numeric_cols] = scaler.transform(df[numeric_cols])
+    # Function to clean numerical variables we will be training on
+    def clean_numeric(value):
+        try:
+            if isinstance(value, str):
+                value = value.replace(',', '')
+            return float(value)
+        except ValueError:
+            return np.nan  # return NaN for values that cannot be converted to float
+
+    numeric_cols = ["Duration (sec)",
+            "Sentiment_Polarity", "Sentiment_Subjectivity"
+            ]
+
+    for col in numeric_cols:
+        df[col] = df[col].apply(clean_numeric)
+
+    # Impute missing values
+    from sklearn.impute import SimpleImputer
+    imputer = SimpleImputer(strategy='mean')
+    df[numeric_cols] = imputer.fit_transform(df[numeric_cols])
+
+    # Scale numeric data
+    scaler = StandardScaler()
+    df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+
+
+
+
 
 
 
