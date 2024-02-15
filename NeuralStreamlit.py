@@ -9,11 +9,8 @@ from PIL import Image
 import random
 import io
 import requests
-from io import BytesIO
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-from tensorflow.keras.preprocessing.image import img_to_array
-from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import gc
 import cv2
@@ -24,6 +21,16 @@ from textblob import TextBlob
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.impute import SimpleImputer
+import numpy as np
+import requests
+from PIL import Image
+from io import BytesIO
+import tempfile
+import os
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
+
 
 
 
@@ -158,54 +165,123 @@ def get_bert_embeddings(text):
 
 
 
-def download_and_preprocess_image(image_content, target_size=(224, 224)):
-    if image_content:
-        try:
-            image_stream = io.BytesIO(image_content)
-            image = Image.open(image_stream)
-            image = image.resize(target_size)
-            img_array = img_to_array(image)
-            img_array = img_array / 255.0
+# Initialize the feature extractor model (if not already initialized)
+feature_extractor = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 
-            emotion_features = extract_emotion_features(image)
-            object_features = extract_object_features(image)
 
-            return img_array, emotion_features, object_features
-        except IOError as e:
-            print(f"Error processing the image: {e}")
-            return None, [0] * 7, [0] * 10
-    else:
-        return None, [0] * 7, [0] * 10
 
-def preprocess_and_extract_features(processed_image, emotion_features, object_features, datagen, feature_extractor):
-    if processed_image is not None:
-        augmented_images = [datagen.random_transform(processed_image) for _ in range(5)]
-        augmented_features = [feature_extractor.predict(np.expand_dims(img, axis=0)) for img in augmented_images]
-        mean_features = np.mean(augmented_features, axis=0).flatten()
-        combined_features = np.concatenate((mean_features, emotion_features, object_features))
-        
-        # Resize the feature vector to a fixed size if necessary
-        target_size = 500  # Adjust as needed
-        if combined_features.size >= target_size:
-            return combined_features[:target_size]
-        else:
-            return np.pad(combined_features, (0, target_size - combined_features.size), 'constant')
-    else:
-        return np.zeros((500,))
+
+# Modify the `download_and_preprocess_image` function accordingly to handle image loading for feature extraction
+
+def download_and_preprocess_image(url, target_size=(224, 224)):
+    """Download an image from a URL and resize it."""
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            img = Image.open(BytesIO(response.content))
+            img = img.resize(target_size)
+            return img
+    except Exception as e:
+        print(f"Error downloading {url}: {e}")
+    return None
+
 
 
 def extract_emotion_features(image):
     try:
-        analysis = DeepFace.analyze(img_path=image, actions=['emotion'])
-        return [analysis["emotion"][emotion] for emotion in analysis["emotion"]]
+        # Save the PIL Image to a temporary file for analysis
+        with tempfile.NamedTemporaryFile(suffix='.jpg', mode='wb', delete=True) as tmp_file:
+            image.save(tmp_file, format='JPEG')
+            tmp_file.flush()  # Ensure data is written to disk
+            
+            # Perform emotion analysis using DeepFace
+            analysis = DeepFace.analyze(img_path=tmp_file.name, actions=['emotion'], enforce_detection=False)
+            
+            # Check if the analysis result is in the expected format
+            if isinstance(analysis, list) and len(analysis) > 0 and 'emotion' in analysis[0]:
+                emotions = analysis[0]['emotion']
+                # Convert emotion percentages into a list in a consistent order
+                emotion_features = [emotions.get(emotion, 0) for emotion in ["angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"]]
+                return emotion_features
+            else:
+                print("Unexpected format in emotion analysis:", analysis)
+                return [0] * 7  # Return a default list of zeros if the format is unexpected
     except Exception as e:
         print(f"Emotion detection failed: {e}")
-        return [0] * 7
+        return [0] * 7  # Return a default list of zeros in case of errors
 
-def extract_object_features(image):
-    # Placeholder for object detection logic
-    num_object_features = 10
-    return [0] * num_object_features 
+            
+def extract_object_features(image_input):
+    num_features = 500  # Define the target number of features
+    
+    try:
+        # Check if the input is a file path or a PIL Image
+        if isinstance(image_input, str):
+            # It's a file path, load the image as before
+            img = image.load_img(image_input, target_size=(224, 224))
+        elif isinstance(image_input, Image.Image):
+            # It's a PIL Image object, directly use it
+            img = image_input.resize((224, 224))
+        else:
+            raise ValueError("Invalid image input type.")
+        
+        img_array = image.img_to_array(img)
+        img_preprocessed = preprocess_input(np.expand_dims(img_array, axis=0))
+
+        # Obtain feature representations using the feature extractor
+        features = feature_extractor.predict(img_preprocessed)
+        flattened_features = features.flatten()
+
+        # Adjust the number of features to the desired target size
+        if flattened_features.size > num_features:
+            return flattened_features[:num_features]
+        else:
+            return np.pad(flattened_features, (0, num_features - flattened_features.size), 'constant')
+    except Exception as e:
+        print(f"Error extracting object features: {e}")
+        return np.zeros(num_features)
+
+
+
+
+def preprocess_and_extract_features(image_path, datagen, feature_extractor, extract_emotion_features, extract_object_features):
+    """
+    Preprocesses the uploaded image, extracts emotion and object features,
+    and combines them into a single feature vector.
+
+    Parameters:
+    - image_path: Path to the image file.
+    - datagen: Data generator for image augmentation (if necessary).
+    - feature_extractor: Pre-trained model for object feature extraction.
+    - extract_emotion_features: Function to extract emotion features.
+    - extract_object_features: Function to extract object features.
+
+    Returns:
+    - A numpy array containing the combined features.
+    """
+
+    # Load and preprocess the image
+    img = load_img(image_path, target_size=(224, 224))
+    img_array = img_to_array(img)
+    img_preprocessed = preprocess_input(np.expand_dims(img_array, axis=0))
+
+    # Extract object features using the feature extractor model
+    object_features = feature_extractor.predict(img_preprocessed).flatten()
+
+    # Ensure object features have the correct length (500)
+    num_object_features = 500
+    if len(object_features) > num_object_features:
+        object_features = object_features[:num_object_features]
+    else:
+        object_features = np.pad(object_features, (0, num_object_features - len(object_features)), 'constant', constant_values=0)
+
+    # Extract emotion features using DeepFace
+    emotion_features = extract_emotion_features(image_path)  # Adjusted to accept file path
+
+    # Combine object and emotion features
+    combined_features = np.concatenate([object_features, emotion_features])
+
+    return combined_features
 
 # Function to clean numerical variables we will be training on
 def clean_numeric(value):
@@ -317,7 +393,7 @@ def load_resources():
     model = tf.keras.models.load_model("neural_network_model.h5")
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     scaler = joblib.load("scaler.pkl")
-    encoder = joblib.load("encoder1.pkl")  # Adjust the name if necessary
+    encoder = joblib.load("encoder1.pkl")  
     text_vectorizer = joblib.load("tfidf_vectorizer.pkl")
     benchmark = joblib.load("benchmark.pkl")
     train_columns = joblib.load("train_columns.pkl")
@@ -327,15 +403,7 @@ def load_resources():
 bert_model, feature_extractor, model, tokenizer, scaler, encoder, text_vectorizer, benchmark, train_columns, boxcox_lambda = load_resources()
 
 # Streamlit app
-st.title("Instagram Post Reach Predictor ")
-
-# # Inputs
-# post_type = st.selectbox("Post Type", ["IG reel", "IG carousel", "IG image"])
-# duration = st.number_input("Duration (sec)", 0)
-# title = st.text_input("Title")
-# transcription = st.text_input("Hook")
-# uploaded_image = st.file_uploader("Upload thumbnail", type=["jpg", "jpeg"])
-# relevancy_score = st.number_input("Choose the cultural relevance score between 0 to 1", min_value=0.0, value = 0.5, format="%.2f") # default value entering = 100
+st.title("Hook and Thumbnail A/B Predictor ")
 
 # Input section with clear labeling and unique layout
 with st.form("input_form"):
@@ -347,7 +415,7 @@ with st.form("input_form"):
 
     with col2:
         relevancy_score = st.slider("Select Cultural Relevance Score", 0.0, 1.0, 0.5)
-        uploaded_image = st.file_uploader("Upload Thumbnail", type=["jpg", "jpeg"], help="Image should be in JPG or JPEG format.")
+        uploaded_image = st.file_uploader("Upload Thumbnail", type=["jpg", "jpeg"], help="Image should be in JPG or JPEG format (not PNG).")
 
     title = st.text_input("Enter Post Title", help = "any title on the video displayed")
     hook = st.text_area("Enter Post Hook", help="A hook is an attention-grabbing snippet words said in the first 3-5 seconds.")
@@ -388,7 +456,9 @@ if submit_button:
     )
 
     # Limit the duration to a maximum of 60 seconds
-    df["Duration (sec)"] = min(duration, 90)
+    # Assuming 'df' is your DataFrame and it has a column 'Duration' with duration values in seconds
+    df["Duration (sec)"] = df["Duration (sec)"].apply(lambda duration: 30 + (duration - 30) * 0.10 if duration > 30 else duration)
+    df["Duration (sec)"] = np.minimum(df["Duration (sec)"], 60)
 
     # Convert 'Title' using TF-IDF vectorizer
     title_matrix = text_vectorizer.transform(df["Title"])
@@ -412,7 +482,6 @@ if submit_button:
     df = df.reindex(columns=prediction_columns, fill_value=0)
     tabular_data = df.values.reshape(1, -1)
 
-    # BERT Embeddings
     
     # In the Streamlit app, when predicting
     combined_text = (title if title else "") + " " + (hook if hook else "")
@@ -424,43 +493,66 @@ if submit_button:
     # Add these values to your dataframe before scaling and encoding
     df['Sentiment_Polarity'] = sentiment_polarity
     df['Sentiment_Subjectivity'] = sentiment_subjectivity
+
+    # Add bert embeddings
     bert_embeddings = get_bert_embeddings(combined_text)
     bert_embeddings = bert_embeddings.reshape(1, -1)
 
-
+    # Add and normalize numerical columns
     numeric_cols = ["Duration (sec)", "Sentiment_Polarity", "Sentiment_Subjectivity"
                     ]
 
     # Now you can safely apply imputation
     imputer = SimpleImputer(strategy='mean')
 
+    for col in numeric_cols:
+        df[col] = df[col].apply(clean_numeric)
 
     for col in numeric_cols:
         df[numeric_cols] = imputer.fit_transform(df[numeric_cols])
-
-    for col in numeric_cols:
-        df[col] = df[col].apply(clean_numeric)
 
     scaler = MinMaxScaler()
     for col in numeric_cols:
         df[col] = scaler.fit_transform(df[col].values.reshape(-1, 1))
 
 
-    # initializing image_features
-    image_features = None
-    placeholder_image_features = np.zeros((1, 500)) # case
+    # Placeholder size for combined features
+    placeholder_size = 507
+
+    # Placeholder for image features
+    placeholder_image_features = np.zeros((1, placeholder_size))
 
     if uploaded_image is not None:
         with st.spinner('Processing image...'):
-            processed_image, emotion_features, object_features = download_and_preprocess_image(uploaded_image.getvalue())
-            if processed_image is not None:
-                image_features = preprocess_and_extract_features(processed_image, emotion_features, object_features, datagen, feature_extractor)
+            try:
+                # Convert uploaded image to a PIL Image
+                img = Image.open(uploaded_image).convert('RGB')
+                
+                # Emotion feature extraction expects a PIL Image
+                emotion_features = extract_emotion_features(img)  # Ensure this is adapted to use PIL Image directly
+                #st.write("Emotion features detected:", emotion_features if np.sum(emotion_features) != 0 else "No emotion features detected.")
+                
+                # For object feature extraction, save the PIL Image to a temporary file
+                with tempfile.NamedTemporaryFile(suffix='.jpg', mode='wb', delete=False) as tmp_file:
+                    img.save(tmp_file, format='JPEG')
+                    tmp_file.flush()  # Ensure data is written
+                    tmp_file_path = tmp_file.name
+                    
+                    # Extract object features
+                    object_features = extract_object_features(tmp_file_path)  # Ensure this is ready for file paths
+                    #st.write("Object features detected:", object_features if np.any(object_features != 0) else "No object features detected.")
+
+                # Combine features
+                combined_features = np.concatenate([object_features, emotion_features])
+                image_features = combined_features.reshape(1, -1)  # Reshape for compatibility with prediction inputs
                 st.success('Image processed successfully.')
-            else:
-                st.error('Error in processing the image.')
-                image_features = np.zeros((500,))
+
+            except Exception as e:
+                st.error(f"Error in processing the image: {e}")
+                image_features = placeholder_image_features
     else:
-        image_features = np.zeros((500,))
+        image_features = placeholder_image_features
+
 
 
     # Check if image_features is defined, then prepare prediction inputs accordingly
@@ -491,18 +583,73 @@ if submit_button:
 
 
     # Adjust the final estimated reach based on Relevancy Score and Multiple
-    final_estimated_reach = estimated_reach*multiple*multiple_2*3
-    final_estimated_reach1 = estimated_reach*multiple*1.5
+    if post_type == 'IG reel':
+        final_estimated_reach = estimated_reach*multiple*multiple_2*0.4
+        final_estimated_reach1 = estimated_reach*multiple*0.8*0.4
+    else:
+        final_estimated_reach = estimated_reach*multiple*multiple_2
+        final_estimated_reach1 = estimated_reach*multiple*0.8
 
 
     # Call the function to display the output
     display_custom_visual_prediction(final_estimated_reach, final_estimated_reach1, benchmark)
+    
+    # Use markdown with HTML for custom styling, including border and formatted number without decimals
+    # Hypothetical value for demonstration
 
-    # Once prediction is done, call clear_memory to free up space
-    clear_memory()
+
+    # Calculate 10% of the final_estimated_reach
+    reach_variation = final_estimated_reach * 0.1
+
+    # Calculate the lower and upper bounds
+    lower_bound = final_estimated_reach - reach_variation
+    upper_bound = final_estimated_reach + reach_variation
+
+    # Correctly format the numbers to remove any trailing decimals
+    formatted_final_estimated_reach = f"{final_estimated_reach:,.0f}"
+    formatted_lower_bound = f"{lower_bound:,.0f}"
+    formatted_upper_bound = f"{upper_bound:,.0f}"
+
+    # Simplified formatting for clarity
+    markdown_string = f"""
+            <style>
+                .metric-container {{
+                    border: 2px solid #4CAF50; /* Subtle emphasis with color */
+                    border-radius: 8px;
+                    padding: 15px 20px;
+                    background-color: #f9f9f9; /* Soft background for contrast */
+                    display: inline-block; /* Adjust as needed */
+                }}
+                .metric-label {{
+                    font-size: 20px; /* Clear, readable font size */
+                    font-weight: bold;
+                    color: #333; /* Ensuring good readability */
+                }}
+                .metric-value {{
+                    font-size: 20px; /* Keeping important numbers prominent */
+                    font-weight: bold;
+                    color: #4CAF50; /* Adding a bit of color for emphasis */
+                    margin-left: 5px; /* Spacing for aesthetics */
+                }}
+                .metric-range {{
+                    font-size: 18px; /* Slightly smaller font for the range */
+                    color: #777; /* Less emphasis on the range */
+                    margin-left: 5px; /* Aesthetic spacing */
+                    font-style: italic; /* Differentiation */
+                }}
+            </style>
+            <div class="metric-container">
+                <span class="metric-label">Reach Prediction:</span>
+                <span class="metric-value">{final_estimated_reach:,.0f}</span>
+                <span class="metric-range">([{lower_bound:,.0f}-{upper_bound:,.0f}])</span>
+            </div>
+            """
+
+    # This is where you would use the markdown_string with your streamlit code, like:
+    st.markdown(markdown_string, unsafe_allow_html=True)
 
 # Footer
 st.write("---")
-st.write("Powered by Team Gary")
+st.write("Powered by Data Science")
 
 
