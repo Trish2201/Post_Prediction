@@ -418,7 +418,7 @@ with st.form("input_form"):
         post_description_container = st.empty()
         if post_type == "IG image":
             post_description = post_description_container.text_input("Enter Post Copy", help = "caption of the image post displayed")
-            st.write(post_description)
+            #st.write(post_description)
         else:
             post_description = None
         uploaded_image = st.file_uploader("Upload Thumbnail", type=["jpg", "jpeg"], help="Image should be in JPG or JPEG format (not PNG).")
@@ -427,9 +427,9 @@ with st.form("input_form"):
         relevancy_score = st.slider("Select Google Trend Score", 0.0, 1.0, 0.5)
 
         # Create sliders for each cell in the table
-        ig_reel_value = st.slider("Reel Attention Score", min_value=0.0, max_value=1.0, value=0.4, step=0.1)
-        ig_carousel_value = st.slider("Carousel Attention Score", min_value=0.0, max_value=1.0, value=0.6, step=0.1)
-        ig_image_value = st.slider("Image Attention Score", min_value=0.0, max_value=1.0, value=1.0, step=0.1)
+        ig_reel_value = st.slider("Reel Attention Score", min_value=0.0, max_value=1.5, value=0.4, step=0.1)
+        ig_carousel_value = st.slider("Carousel Attention Score", min_value=0.0, max_value=1.5, value=1.2, step=0.1)
+        ig_image_value = st.slider("Image Attention Score", min_value=0.0, max_value=1.5, value=1.0, step=0.1)
 
 
     title = st.text_input("Enter Post Title", help = "any title on the video displayed")
