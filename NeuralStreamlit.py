@@ -405,23 +405,42 @@ bert_model, feature_extractor, model, tokenizer, scaler, encoder, text_vectorize
 # Streamlit app
 st.title("Hook and Thumbnail A/B Predictor ")
 
+
+import streamlit as st
+
 # Input section with clear labeling and unique layout
 with st.form("input_form"):
     col1, col2 = st.columns(2)
 
     with col1:
-        post_type = st.selectbox("Select Post Type", ["IG reel", "IG carousel", "IG image"], index=0)
+        post_type = st.selectbox("Select Post Type", ["IG reel", "IG carousel", "IG image"])
         duration = st.number_input("Enter Duration in Seconds", min_value=0, value=30, step=1)
-
-    with col2:
-        relevancy_score = st.slider("Select Cultural Relevance Score", 0.0, 1.0, 0.5)
+        post_description_container = st.empty()
+        if post_type == "IG image":
+            post_description = post_description_container.text_input("Enter Post Copy", help = "caption of the image post displayed")
+            st.write(post_description)
+        else:
+            post_description = None
         uploaded_image = st.file_uploader("Upload Thumbnail", type=["jpg", "jpeg"], help="Image should be in JPG or JPEG format (not PNG).")
+        
+    with col2:
+        relevancy_score = st.slider("Select Google Trend Score", 0.0, 1.0, 0.5)
+
+        # Create sliders for each cell in the table
+        ig_reel_value = st.slider("Reel Attention Score", min_value=0.0, max_value=1.0, value=0.4, step=0.1)
+        ig_carousel_value = st.slider("Carousel Attention Score", min_value=0.0, max_value=1.0, value=0.6, step=0.1)
+        ig_image_value = st.slider("Image Attention Score", min_value=0.0, max_value=1.0, value=1.0, step=0.1)
+
 
     title = st.text_input("Enter Post Title", help = "any title on the video displayed")
     hook = st.text_area("Enter Post Hook", help="A hook is an attention-grabbing snippet words said in the first 3-5 seconds.")
 
-    submit_button = st.form_submit_button("Predict Reach")
+    with col1:
+        refresh_button = st.form_submit_button("Refresh Page", help = "If you select IG image")
 
+    
+    
+    submit_button = st.form_submit_button("Predict Reach")
 
 # Detect numbers in the title
 if contains_numbers(title):
@@ -451,7 +470,7 @@ if submit_button:
         {
             "Post type": [post_type],
             "Duration (sec)": [duration],
-            "Title": [title + " " + hook],
+            "Title": [f"{title} {hook} {post_description}" if post_description else f"{title} {hook}"],
         }
     )
 
@@ -584,11 +603,14 @@ if submit_button:
 
     # Adjust the final estimated reach based on Relevancy Score and Multiple
     if post_type == 'IG reel':
-        final_estimated_reach = estimated_reach*multiple*multiple_2*0.4
-        final_estimated_reach1 = estimated_reach*multiple*0.8*0.4
+        final_estimated_reach = estimated_reach * multiple * multiple_2 * ig_reel_value
+        final_estimated_reach1 = estimated_reach * multiple * 0.8 * ig_reel_value
+    elif post_type == 'IG carousel':
+        final_estimated_reach = estimated_reach * multiple * multiple_2 * ig_carousel_value
+        final_estimated_reach1 = estimated_reach * multiple * 0.8 * ig_carousel_value
     else:
-        final_estimated_reach = estimated_reach*multiple*multiple_2
-        final_estimated_reach1 = estimated_reach*multiple*0.8
+        final_estimated_reach = estimated_reach * multiple * multiple_2 * ig_image_value
+        final_estimated_reach1 = estimated_reach * multiple * 0.8 * ig_image_value
 
 
     # Call the function to display the output
