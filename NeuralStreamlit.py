@@ -386,7 +386,7 @@ datagen = ImageDataGenerator(
     )
 
 # Load models and transformers
-@st.cache_resource
+@st.cache_resource(ttl=24*3600)
 def load_resources():
     bert_model = TFBertModel.from_pretrained('bert-base-uncased')
     feature_extractor = ResNet50(weights='imagenet', include_top=False)
