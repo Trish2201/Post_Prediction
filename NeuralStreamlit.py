@@ -621,7 +621,7 @@ if submit_button:
 
 
     # Calculate 10% of the final_estimated_reach
-    reach_variation = final_estimated_reach * 0.2
+    reach_variation = final_estimated_reach * 0.15
 
     # Calculate the lower and upper bounds
     lower_bound = final_estimated_reach - reach_variation
