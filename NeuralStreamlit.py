@@ -143,7 +143,7 @@ inject_custom_css()
 
 def clear_memory():
     # List of large variables to clear
-    large_variables = ['df', 'bert_embeddings', 'object_features', 'emotion_features', 'processed_image']
+    large_variables = ['df_combined', 'bert_embeddings', 'object_features', 'emotion_features', 'processed_image']
 
     for var in large_variables:
         if var in globals():
@@ -167,8 +167,6 @@ def get_bert_embeddings(text):
 
 # Initialize the feature extractor model (if not already initialized)
 feature_extractor = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
-
-
 
 
 # Modify the `download_and_preprocess_image` function accordingly to handle image loading for feature extraction
