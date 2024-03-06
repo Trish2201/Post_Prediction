@@ -416,30 +416,42 @@ with st.form("input_form"):
         post_type = st.selectbox("Select Post Type", ["IG reel", "IG carousel", "IG image"])
         duration = st.number_input("Enter Duration in Seconds", min_value=0, value=30, step=1)
         post_description_container = st.empty()
-        if post_type == "IG image":
-            post_description = post_description_container.text_input("Enter Post Copy", help = "caption of the image post displayed")
+        #if post_type == "IG image":
+        post_description = post_description_container.text_input("Enter Post Copy", help = "caption of the image post displayed")
             #st.write(post_description)
-        else:
-            post_description = None
+        # else:
+        #     post_description = None
         uploaded_image = st.file_uploader("Upload Thumbnail", type=["jpg", "jpeg"], help="Image should be in JPG or JPEG format (not PNG).")
         
     with col2:
         relevancy_score = st.slider("Select Google Trend Score", 0.0, 1.0, 0.5)
 
         # Create sliders for each cell in the table
-        ig_reel_value = st.slider("Reel Attention Score", min_value=0.0, max_value=1.5, value=0.4, step=0.1)
-        ig_carousel_value = st.slider("Carousel Attention Score", min_value=0.0, max_value=1.5, value=1.2, step=0.1)
+        ig_reel_value = st.slider("Reel Attention Score", min_value=0.0, max_value=1.5, value=1.0, step=0.1)
+        ig_carousel_value = st.slider("Carousel Attention Score", min_value=0.0, max_value=1.5, value=1.0, step=0.1)
         ig_image_value = st.slider("Image Attention Score", min_value=0.0, max_value=1.5, value=1.0, step=0.1)
 
 
     title = st.text_input("Enter Post Title", help = "any title on the video displayed")
     hook = st.text_area("Enter Post Hook", help="A hook is an attention-grabbing snippet words said in the first 3-5 seconds.")
+    # keyword_difficulty = st.slider("Keyword Difficulty", min_value=0, max_value=100, value=90, step=1)
 
-    with col1:
-        refresh_button = st.form_submit_button("Refresh Page", help = "If you select IG image")
+    # Checkbox to enable or disable the keyword difficulty slider
+    enable_slider = st.checkbox("Enable Keyword Difficulty Slider", value=False)
+    
+
+    # Only show the slider if the checkbox is checked
+    if enable_slider:
+        keyword_difficulty = st.slider("Keyword Difficulty", min_value=0, max_value=100, value=90, step=1)
+    else:
+        keyword_difficulty = None  # Or any default value you want to use when the slider is disabled
+
+
+    # with col1:
+    #     refresh_button = st.form_submit_button("Refresh Page", help = "If you select IG image")
 
     
-    
+    refresh_button = st.form_submit_button("Refresh Page", help = "If you select above")
     submit_button = st.form_submit_button("Predict Reach")
 
 # Detect numbers in the title
@@ -476,8 +488,9 @@ if submit_button:
 
     # Limit the duration to a maximum of 60 seconds
     # Assuming 'df' is your DataFrame and it has a column 'Duration' with duration values in seconds
-    df["Duration (sec)"] = df["Duration (sec)"].apply(lambda duration: 30 + (duration - 30) * 0.10 if duration > 30 else duration)
+   # df["Duration (sec)"] = df["Duration (sec)"].apply(lambda duration: 60 - (duration - 60) * 0.10 if duration > 60 else duration)
     df["Duration (sec)"] = np.minimum(df["Duration (sec)"], 60)
+   # df["Duration (sec)"] = np.maximum(df["Duration (sec)"], 15)
 
     # Convert 'Title' using TF-IDF vectorizer
     title_matrix = text_vectorizer.transform(df["Title"])
@@ -599,7 +612,14 @@ if submit_button:
     
     # Display the prediction
     estimated_reach = int(prediction[0])
+    # estimated_reach = 0.302*estimated_reach - 15807*keyword_difficulty + 1905305
 
+    if keyword_difficulty is not None:
+        estimated_reach = 0.302*estimated_reach - 15807*keyword_difficulty + 1905305
+    else:
+    # If keyword_difficulty is None (i.e., not entered), don't adjust estimated_reach based on keyword_difficulty
+    # You can either leave estimated_reach as it is, or set it to some default or error value
+        pass  
 
     # Adjust the final estimated reach based on Relevancy Score and Multiple
     if post_type == 'IG reel':
@@ -621,7 +641,7 @@ if submit_button:
 
 
     # Calculate 10% of the final_estimated_reach
-    reach_variation = final_estimated_reach * 0.15
+    reach_variation = 150000
 
     # Calculate the lower and upper bounds
     lower_bound = final_estimated_reach - reach_variation
