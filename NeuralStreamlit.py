@@ -30,6 +30,7 @@ import os
 from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from tensorflow.python.saved_model import tag_constants
 
 
 
@@ -143,7 +144,7 @@ inject_custom_css()
 
 def clear_memory():
     # List of large variables to clear
-    large_variables = ['df_combined', 'bert_embeddings', 'object_features', 'emotion_features', 'processed_image', 'flattened_features', 'combined_features']
+    large_variables = ['df_combined', 'bert_embeddings', 'object_features', 'emotion_features', 'processed_image', 'flattened_features', 'combined_features', 'image_features', 'tabular_data']
 
     for var in large_variables:
         if var in globals():
@@ -165,8 +166,8 @@ def get_bert_embeddings(text):
 
 
 
-# Initialize the feature extractor model (if not already initialized)
-feature_extractor = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+# # Initialize the feature extractor model (if not already initialized)
+# feature_extractor = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 
 
 # Modify the `download_and_preprocess_image` function accordingly to handle image loading for feature extraction
@@ -375,7 +376,7 @@ def display_custom_visual_prediction(final_estimated_reach, final_estimated_reac
 
 
 # Initialize the feature extractor (example with VGG16)
-feature_extractor = ResNet50(weights='imagenet', include_top=False)
+# feature_extractor = ResNet50(weights='imagenet', include_top=False)
 datagen = ImageDataGenerator(
     rotation_range=20,
     width_shift_range=0.2,
@@ -389,6 +390,7 @@ def load_resources():
     bert_model = TFBertModel.from_pretrained('bert-base-uncased')
     feature_extractor = ResNet50(weights='imagenet', include_top=False)
     model = tf.keras.models.load_model("neural_network_model.h5")
+    #model = tf.saved_model.load('saved_model/my_model_trt', tags=[tag_constants.SERVING])
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     scaler = joblib.load("scaler.pkl")
     encoder = joblib.load("encoder1.pkl")  
@@ -396,6 +398,7 @@ def load_resources():
     benchmark = joblib.load("benchmark.pkl")
     train_columns = joblib.load("train_columns.pkl")
     boxcox_lambda = joblib.load("boxcox_lambda.pkl")
+    feature_extractor = joblib.load("feature_extractor.pkl")
     return bert_model, feature_extractor, model, tokenizer, scaler, encoder, text_vectorizer, benchmark, train_columns, boxcox_lambda
 
 bert_model, feature_extractor, model, tokenizer, scaler, encoder, text_vectorizer, benchmark, train_columns, boxcox_lambda = load_resources()
@@ -687,6 +690,9 @@ if submit_button:
 
     # This is where you would use the markdown_string with your streamlit code, like:
     st.markdown(markdown_string, unsafe_allow_html=True)
+
+# Ensure to call clear_memory() where appropriate to manage memory usage
+clear_memory()
 
 # Footer
 st.write("---")
