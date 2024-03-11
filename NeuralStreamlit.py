@@ -490,7 +490,7 @@ if submit_button:
     # Limit the duration to a maximum of 60 seconds
     # Assuming 'df' is your DataFrame and it has a column 'Duration' with duration values in seconds
    # df["Duration (sec)"] = df["Duration (sec)"].apply(lambda duration: 60 - (duration - 60) * 0.10 if duration > 60 else duration)
-    df["Duration (sec)"] = np.minimum(df["Duration (sec)"], 60)
+    df["Duration (sec)"] = np.minimum(df["Duration (sec)"], 45)
    # df["Duration (sec)"] = np.maximum(df["Duration (sec)"], 15)
 
     # Convert 'Title' using TF-IDF vectorizer
