@@ -165,11 +165,6 @@ def get_bert_embeddings(text):
     return outputs.last_hidden_state[:, 0, :].numpy()
 
 
-
-# # Initialize the feature extractor model (if not already initialized)
-# feature_extractor = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
-
-
 # Modify the `download_and_preprocess_image` function accordingly to handle image loading for feature extraction
 
 def download_and_preprocess_image(url, target_size=(224, 224)):
@@ -185,7 +180,6 @@ def download_and_preprocess_image(url, target_size=(224, 224)):
     return None
 
 
-feature_extractor = joblib.load("feature_extractor.pkl")
 def extract_emotion_features(image):
     try:
         # Save the PIL Image to a temporary file for analysis
@@ -377,12 +371,12 @@ def display_custom_visual_prediction(final_estimated_reach, final_estimated_reac
 
 # Initialize the feature extractor (example with VGG16)
 # feature_extractor = ResNet50(weights='imagenet', include_top=False)
-datagen = ImageDataGenerator(
-    rotation_range=20,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    horizontal_flip=True
-    )
+# datagen = ImageDataGenerator(
+#     rotation_range=20,
+#     width_shift_range=0.2,
+#     height_shift_range=0.2,
+#     horizontal_flip=True
+#     )
 
 # Load models and transformers
 @st.cache_resource(ttl=24*3600)
