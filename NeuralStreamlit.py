@@ -185,7 +185,7 @@ def download_and_preprocess_image(url, target_size=(224, 224)):
     return None
 
 
-
+feature_extractor = joblib.load("feature_extractor.pkl")
 def extract_emotion_features(image):
     try:
         # Save the PIL Image to a temporary file for analysis
@@ -388,7 +388,7 @@ datagen = ImageDataGenerator(
 @st.cache_resource(ttl=24*3600)
 def load_resources():
     bert_model = TFBertModel.from_pretrained('bert-base-uncased')
-    feature_extractor = ResNet50(weights='imagenet', include_top=False)
+    feature_extractor = joblib.load("feature_extractor.pkl")
     model = tf.keras.models.load_model("neural_network_model.h5")
     #model = tf.saved_model.load('saved_model/my_model_trt', tags=[tag_constants.SERVING])
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
