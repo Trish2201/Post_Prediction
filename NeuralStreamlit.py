@@ -143,7 +143,7 @@ inject_custom_css()
 
 def clear_memory():
     # List of large variables to clear
-    large_variables = ['df_combined', 'bert_embeddings', 'object_features', 'emotion_features', 'processed_image']
+    large_variables = ['df_combined', 'bert_embeddings', 'object_features', 'emotion_features', 'processed_image', 'flattened_features', 'combined_features']
 
     for var in large_variables:
         if var in globals():
