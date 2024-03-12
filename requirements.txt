@@ -11,10 +11,11 @@ streamlit_webrtc==0.47.0
 av==10.0.0
 deepface==0.0.75
 mediapipe==0.9.0.1
-tensorflow-cpu==2.13.0
+#tensorflow-cpu==2.15.0
 #tensorflow-gpu
 #tensorflow-macos
 #tensorflow-metal
+tensorflow==2.15.1
 scipy
 transformers
 Textblob
