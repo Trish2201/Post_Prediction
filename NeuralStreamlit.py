@@ -1,19 +1,14 @@
 
 import streamlit as st
 import pandas as pd
-import numpy as np
 import re
 import tensorflow as tf
 import joblib
 from PIL import Image
-import random
-import io
 import requests
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import gc
-import cv2
 from deepface import DeepFace
 from scipy.special import inv_boxcox
 from transformers import BertTokenizer, TFBertModel
@@ -26,11 +21,9 @@ import requests
 from PIL import Image
 from io import BytesIO
 import tempfile
-import os
 from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
-from tensorflow.python.saved_model import tag_constants
 
 
 
@@ -429,24 +422,46 @@ with st.form("input_form"):
 
     title = st.text_input("Enter Post Title", help = "any title on the video displayed")
     hook = st.text_area("Enter Post Hook", help="A hook is an attention-grabbing snippet words said in the first 3-5 seconds.")
-    # keyword_difficulty = st.slider("Keyword Difficulty", min_value=0, max_value=100, value=90, step=1)
 
-    # Checkbox to enable or disable the keyword difficulty slider
-    enable_slider = st.checkbox("Enable Keyword Difficulty Slider", value=False)
+    # # Checkbox to enable or disable the keyword difficulty slider
+    # enable_slider = st.checkbox("Check if the post has any of the following features - Handwritten BSU, Veesual, Tweet style header, Background music ", value=False)
+    # checkbox = st.checkbox("Check if the post has any of the following features - Worded titles, Context driven hook, Gary centric content, Niche audience, Advertising book/platform accounts, Long hook, Visually busy title", value=False)
+    # culture_checkbox = st.checkbox("Check if the post was released to tap into a culture moment", value=False)
+
+    st.write("Please select if any of the mentioned features apply to your post:")
+
+    # Initialize the variables to False
+    good_features = False
+    bad_features = False
+    cultural_relevance = False
+
+    with st.expander("Ideal Features"):
+        if st.checkbox("Handwritten BSU", help="Check if the post includes handwritten visual elements.") or \
+        st.checkbox("Veesual", help="Check if the post is a moving image like post.") or \
+        st.checkbox("Tweet style header", help="Check if the header is twitter style.") or \
+        st.checkbox("Background music", help="Check if there is accompanying music."):
+            good_features = True
+
+    with st.expander("Sub-Optimal Features"):
+        if st.checkbox("Worded titles", help="Check if the titles are wordy or verbose.") or \
+        st.checkbox("Context driven hook", help="Check if the hook is designed around the context of the content instead of direct punchline.") or \
+        st.checkbox("Gary centric content", help="Check if the content is centered too much around Gary.") or \
+        st.checkbox("Niche audience", help="Check if the content targets a specific audience.") or \
+        st.checkbox("Advertising book/platform accounts", help="Check if it has an appeal of promotional content.") or \
+        st.checkbox("Long hook", help="Check if the hook is longer than usual or very worded.") or \
+        st.checkbox("Visually busy title", help="Check if the title has a lot of visual elements."):
+            bad_features = True
+
+    with st.expander("Cultural Moment"):
+        if st.checkbox("The post was released to tap into a culture moment"):
+            cultural_relevance = True
     
+    # Store a value based on checkbox selection for later use
+    slider_multiplier = 1.5 if good_features else 1
+    culture_multiplier = 1.5 if bad_features else 1
+    checkbox_multiplier = 0.70 if cultural_relevance else 1
 
-    # Only show the slider if the checkbox is checked
-    if enable_slider:
-        keyword_difficulty = st.slider("Keyword Difficulty", min_value=0, max_value=100, value=90, step=1)
-    else:
-        keyword_difficulty = None  # Or any default value you want to use when the slider is disabled
-
-
-    # with col1:
-    #     refresh_button = st.form_submit_button("Refresh Page", help = "If you select IG image")
-
-    
-    refresh_button = st.form_submit_button("Refresh Page", help = "If you select above")
+    #refresh_button = st.form_submit_button("Refresh Page", help = "If you select above")
     submit_button = st.form_submit_button("Predict Reach")
 
 # Detect numbers in the title
@@ -481,11 +496,9 @@ if submit_button:
         }
     )
 
-    # Limit the duration to a maximum of 60 seconds
-    # Assuming 'df' is your DataFrame and it has a column 'Duration' with duration values in seconds
    # df["Duration (sec)"] = df["Duration (sec)"].apply(lambda duration: 60 - (duration - 60) * 0.10 if duration > 60 else duration)
     df["Duration (sec)"] = np.minimum(df["Duration (sec)"], 45)
-   # df["Duration (sec)"] = np.maximum(df["Duration (sec)"], 15)
+
 
     # Convert 'Title' using TF-IDF vectorizer
     title_matrix = text_vectorizer.transform(df["Title"])
@@ -505,7 +518,7 @@ if submit_button:
     df = pd.concat([df.drop(columns=categorical_cols), df_encoded], axis=1)
 
     # Ensure df has the same columns as during model training, minus 'Reach'
-    prediction_columns = [col for col in train_columns if col != 'Reach'] # removing 'Reach' from train_columns to limit it to input features
+    prediction_columns = [col for col in train_columns if col != 'Reach'] 
     df = df.reindex(columns=prediction_columns, fill_value=0)
     tabular_data = df.values.reshape(1, -1)
 
@@ -607,34 +620,22 @@ if submit_button:
     
     # Display the prediction
     estimated_reach = int(prediction[0])
-    # estimated_reach = 0.302*estimated_reach - 15807*keyword_difficulty + 1905305
-
-    if keyword_difficulty is not None:
-        estimated_reach = 0.302*estimated_reach - 15807*keyword_difficulty + 1905305
-    else:
-    # If keyword_difficulty is None (i.e., not entered), don't adjust estimated_reach based on keyword_difficulty
-    # You can either leave estimated_reach as it is, or set it to some default or error value
-        pass  
 
     # Adjust the final estimated reach based on Relevancy Score and Multiple
     if post_type == 'IG reel':
-        final_estimated_reach = estimated_reach * multiple * multiple_2 * ig_reel_value
+        final_estimated_reach = estimated_reach * multiple * multiple_2 * ig_reel_value * slider_multiplier * culture_multiplier * checkbox_multiplier
         final_estimated_reach1 = estimated_reach * multiple * 0.8 * ig_reel_value
     elif post_type == 'IG carousel':
-        final_estimated_reach = estimated_reach * multiple * multiple_2 * ig_carousel_value
+        final_estimated_reach = estimated_reach * multiple * multiple_2 * ig_carousel_value * slider_multiplier * culture_multiplier * checkbox_multiplier
         final_estimated_reach1 = estimated_reach * multiple * 0.8 * ig_carousel_value
     else:
-        final_estimated_reach = estimated_reach * multiple * multiple_2 * ig_image_value
+        final_estimated_reach = estimated_reach * multiple * multiple_2 * ig_image_value * slider_multiplier * culture_multiplier * checkbox_multiplier
         final_estimated_reach1 = estimated_reach * multiple * 0.8 * ig_image_value
 
 
     # Call the function to display the output
     display_custom_visual_prediction(final_estimated_reach, final_estimated_reach1, benchmark)
     
-    # Use markdown with HTML for custom styling, including border and formatted number without decimals
-    # Hypothetical value for demonstration
-
-
     # Calculate 10% of the final_estimated_reach
     reach_variation = 150000
 
