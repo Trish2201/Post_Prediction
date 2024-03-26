@@ -457,9 +457,9 @@ with st.form("input_form"):
             cultural_relevance = True
     
     # Store a value based on checkbox selection for later use
-    slider_multiplier = 1.5 if good_features else 1
-    culture_multiplier = 1.5 if bad_features else 1
-    checkbox_multiplier = 0.70 if cultural_relevance else 1
+    slider_multiplier = 1.2 if good_features else 1
+    culture_multiplier = 0.8 if bad_features else 1
+    checkbox_multiplier = 1.2 if cultural_relevance else 1
 
     #refresh_button = st.form_submit_button("Refresh Page", help = "If you select above")
     submit_button = st.form_submit_button("Predict Reach")
