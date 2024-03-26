@@ -439,6 +439,7 @@ with st.form("input_form"):
         if st.checkbox("Handwritten BSU", help="Check if the post includes handwritten visual elements.") or \
         st.checkbox("Veesual", help="Check if the post is a moving image like post.") or \
         st.checkbox("Tweet style header", help="Check if the header is twitter style.") or \
+        st.checkbox("Factual/Specific Hook", help="Check if the hook is immediately diving into helpful content.") or \
         st.checkbox("Background music", help="Check if there is accompanying music."):
             good_features = True
 
@@ -457,7 +458,7 @@ with st.form("input_form"):
             cultural_relevance = True
     
     # Store a value based on checkbox selection for later use
-    slider_multiplier = 1.2 if good_features else 1
+    slider_multiplier = 1.5 if good_features else 1
     culture_multiplier = 0.8 if bad_features else 1
     checkbox_multiplier = 1.2 if cultural_relevance else 1
 
