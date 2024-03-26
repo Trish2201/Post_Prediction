@@ -454,13 +454,14 @@ with st.form("input_form"):
             bad_features = True
 
     with st.expander("Cultural Moment"):
-        if st.checkbox("The post was released to tap into a culture moment"):
+        if st.checkbox("The post was released to tap into a culture moment/") or \
+        st.checkbox("Green Screen", help="Check if the green screen was related to a relevant cultural topic.") :
             cultural_relevance = True
     
     # Store a value based on checkbox selection for later use
     slider_multiplier = 1.5 if good_features else 1
-    culture_multiplier = 0.8 if bad_features else 1
-    checkbox_multiplier = 1.2 if cultural_relevance else 1
+    culture_multiplier = 0.7 if bad_features else 1
+    checkbox_multiplier = 1.5 if cultural_relevance else 1
 
     #refresh_button = st.form_submit_button("Refresh Page", help = "If you select above")
     submit_button = st.form_submit_button("Predict Reach")
