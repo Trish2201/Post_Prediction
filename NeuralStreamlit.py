@@ -454,7 +454,7 @@ with st.form("input_form"):
             bad_features = True
 
     with st.expander("Cultural Moment"):
-        if st.checkbox("The post was released to tap into a culture moment/") or \
+        if st.checkbox("The post was released to tap into a culture moment") or \
         st.checkbox("Green Screen", help="Check if the green screen was related to a relevant cultural topic.") :
             cultural_relevance = True
     
