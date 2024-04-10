@@ -412,7 +412,7 @@ with st.form("input_form"):
         uploaded_image = st.file_uploader("Upload Thumbnail", type=["jpg", "jpeg"], help="Image should be in JPG or JPEG format (not PNG).")
         
     with col2:
-        relevancy_score = st.slider("Select Google Trend Score", 0.0, 1.0, 0.5)
+        relevancy_score = st.slider("Select Google Trend Score", 0.0, 1.0, 0.5, help = "You can keep it 0.5 if the value on the site looks unreliable")
 
         # Create sliders for each cell in the table
         ig_reel_value = st.slider("Reel Attention Score", min_value=0.0, max_value=1.5, value=1.0, step=0.1)
@@ -454,7 +454,7 @@ with st.form("input_form"):
             bad_features = True
 
     with st.expander("Cultural Moment"):
-        if st.checkbox("The post was released to tap into a culture moment") or \
+        if st.checkbox("The post was released to tap into a culture moment", help = "Do not check this if you have given a 0.8+ score on google trend field already") or \
         st.checkbox("Green Screen", help="Check if the green screen was related to a relevant cultural topic.") :
             cultural_relevance = True
     
