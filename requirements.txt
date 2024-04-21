@@ -20,3 +20,4 @@ scipy
 transformers
 Textblob
 matplotlib
+boto3
