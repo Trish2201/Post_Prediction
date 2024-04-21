@@ -24,6 +24,9 @@ import tempfile
 from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
+import boto3
+
+rekognition = boto3.client('rekognition', aws_access_key_id='AKIAZQ3DQFYCFY4CGU6C', aws_secret_access_key='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', region_name='us-east-1')
 
 
 
@@ -399,6 +402,7 @@ import streamlit as st
 # Input section with clear labeling and unique layout
 with st.form("input_form"):
     col1, col2 = st.columns(2)
+    post_title_default = ""
 
     with col1:
         post_type = st.selectbox("Select Post Type", ["IG reel", "IG carousel", "IG image"])
@@ -410,7 +414,33 @@ with st.form("input_form"):
         # else:
         #     post_description = None
         uploaded_image = st.file_uploader("Upload Thumbnail", type=["jpg", "jpeg"], help="Image should be in JPG or JPEG format (not PNG).")
-        
+
+        if st.form_submit_button("Populate Title"):
+            if uploaded_image is not None:
+                # To see details
+                # st.image(uploaded_image, caption='Uploaded Image.', use_column_width=True)
+                # st.write("")
+
+                # Convert the file to an image
+                image = Image.open(uploaded_image)
+
+                # Convert to bytes
+                img_buffer = BytesIO()
+                image.save(img_buffer, format='JPEG')  # Adjust format as needed
+                img_bytes = img_buffer.getvalue()
+
+                def analyze_image(image_bytes):
+                    response = rekognition.detect_text(
+                        Image={'Bytes': image_bytes}
+                    )
+                    return response
+
+                result = analyze_image(img_bytes)
+                post_title_default = ""
+                for text_block in result['TextDetections']:
+                    if text_block['Type'] == 'LINE':
+                        post_title_default += text_block['DetectedText'] + ' '
+
     with col2:
         relevancy_score = st.slider("Select Google Trend Score", 0.0, 1.0, 0.5, help = "You can keep it 0.5 if the value on the site looks unreliable")
 
@@ -420,7 +450,7 @@ with st.form("input_form"):
         ig_image_value = st.slider("Image Attention Score", min_value=0.0, max_value=1.5, value=1.0, step=0.1)
 
 
-    title = st.text_input("Enter Post Title", help = "any title on the video displayed")
+    title = st.text_input("Enter Post Title", help = "any title on the video displayed", value  = post_title_default)
     hook = st.text_area("Enter Post Hook", help="A hook is an attention-grabbing snippet words said in the first 3-5 seconds.")
 
     # # Checkbox to enable or disable the keyword difficulty slider
@@ -574,6 +604,15 @@ if submit_button:
                 emotion_features = extract_emotion_features(img)  # Ensure this is adapted to use PIL Image directly
                 #st.write("Emotion features detected:", emotion_features if np.sum(emotion_features) != 0 else "No emotion features detected.")
                 
+                # print("--- REKOG START ----")
+                # img_buffer = BytesIO()
+                # img.save(img_buffer, format='JPEG') 
+                # img_bytes = img_buffer.getvalue()
+
+                # response = rekognition.detect_text(Image={"Bytes": img_bytes})
+                # print("--- REKOG DONE ----")
+                # print(response)
+
                 # For object feature extraction, save the PIL Image to a temporary file
                 with tempfile.NamedTemporaryFile(suffix='.jpg', mode='wb', delete=False) as tmp_file:
                     img.save(tmp_file, format='JPEG')
