@@ -26,7 +26,10 @@ from tensorflow.keras.preprocessing import image
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import boto3
 
-rekognition = boto3.client('rekognition', aws_access_key_id='AKIAZQ3DQFYCFY4CGU6C', aws_secret_access_key='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', region_name='us-east-1')
+rekognition = boto3.client('rekognition', 
+                           aws_access_key_id=st.secrets["aws_access_key_id"], 
+                           aws_secret_access_key=st.secrets["aws_secret_access_key"], 
+                           region_name='us-east-1')
 
 
 
